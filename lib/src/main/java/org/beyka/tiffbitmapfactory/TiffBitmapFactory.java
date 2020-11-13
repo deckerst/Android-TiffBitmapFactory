@@ -104,11 +104,7 @@ public class TiffBitmapFactory {
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when {@link Options#inAvailableMemory} not enought to decode image
      */
     public static Bitmap decodeFile(File file, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        long time = System.currentTimeMillis();
-        Log.i("THREAD", "Starting decode " + file.getAbsolutePath());
-        Bitmap mbp = nativeDecodePath(file.getAbsolutePath(), options, listener);
-        Log.w("THREAD", "elapsed ms: " + (System.currentTimeMillis() - time) + " for " + file.getAbsolutePath());
-        return mbp;
+        return nativeDecodePath(file.getAbsolutePath(), options, listener);
     }
 
     /**
@@ -158,11 +154,7 @@ public class TiffBitmapFactory {
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodePath(String path, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        long time = System.currentTimeMillis();
-        Log.i("THREAD", "Starting decode " + path);
-        Bitmap mbp = nativeDecodePath(path, options, listener);
-        Log.w("THREAD", "elapsed ms: " + (System.currentTimeMillis() - time) + " for " + path);
-        return mbp;
+        return nativeDecodePath(path, options, listener);
     }
 
     /**
@@ -213,11 +205,7 @@ public class TiffBitmapFactory {
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        long time = System.currentTimeMillis();
-        Log.i("THREAD", "Starting decode descriptor " + fileDescriptor);
-        Bitmap mbp = nativeDecodeFD(fileDescriptor, options, listener);
-        Log.w("THREAD", "elapsed ms: " + (System.currentTimeMillis() - time) + " for descriptor " + fileDescriptor);
-        return mbp;
+        return nativeDecodeFD(fileDescriptor, options, listener);
     }
 
     private static native Bitmap nativeDecodePath(String path, Options options, IProgressListener listener);
