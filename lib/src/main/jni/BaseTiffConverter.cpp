@@ -3,6 +3,7 @@
 //
 
 #include "BaseTiffConverter.h"
+#include <string.h>
 
 BaseTiffConverter::BaseTiffConverter(JNIEnv *e, jclass clazz, jstring in, jstring out, jobject opts, jobject listener)
 {

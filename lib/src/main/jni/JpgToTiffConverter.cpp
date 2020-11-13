@@ -3,6 +3,7 @@
 //
 
 #include "JpgToTiffConverter.h"
+#include <string.h>
 
 JpgToTiffConverter::JpgToTiffConverter(JNIEnv *e, jclass clazz, jstring in, jstring out, jobject opts, jobject listener)
     : BaseTiffConverter(e, clazz, in, out, opts, listener)

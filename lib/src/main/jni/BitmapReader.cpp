@@ -9,7 +9,7 @@ extern "C" {
 #include "BitmapReader.h"
 #include "BMP.h"
 #include <android/bitmap.h>
-
+#include <string.h>
 
 jobject readBmp
   (JNIEnv *env, jclass clazz, jstring tiffPath, jstring inPath, jobject options, jobject listener)

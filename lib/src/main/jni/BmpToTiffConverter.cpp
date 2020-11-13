@@ -2,6 +2,7 @@
 // Created by beyka on 9/20/17.
 //
 #include "BmpToTiffConverter.h"
+#include <string.h>
 
 BmpToTiffConverter::BmpToTiffConverter(JNIEnv *e, jclass clazz, jstring in, jstring out, jobject opts, jobject listener)
     : BaseTiffConverter(e, clazz, in, out, opts, listener)

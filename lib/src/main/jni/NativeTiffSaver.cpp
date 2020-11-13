@@ -8,6 +8,7 @@ extern "C" {
     #endif
 
     #include "NativeTiffSaver.h"
+    #include <string.h>
 
     int const colorMask = 0xFF;
 
