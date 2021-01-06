@@ -1,9 +1,9 @@
 apply plugin: 'com.android.library'
-//apply plugin: 'com.novoda.bintray-release'
 
 android {
     compileSdkVersion 30
     buildToolsVersion '30.0.2'
+    ndkVersion "21.1.6352462"
 
     def softwareName
 
@@ -14,6 +14,12 @@ android {
         versionName "0.9.8.7"
 
         softwareName = "\"" + project.name + "-" + versionName + "\""
+
+        externalNativeBuild {
+            cmake {
+                cppFlags "-std=c++11 -fvisibility=hidden"
+            }
+        }
     }
 
     buildTypes {
@@ -29,9 +35,11 @@ android {
         }
     }
 
-    sourceSets.main {
-        jni.srcDirs = []
-        jniLibs.srcDirs = ['src/main/libs']
+    externalNativeBuild {
+        cmake {
+            path "src/main/cpp/CMakeLists.txt"
+            version "3.10.2"
+        }
     }
 }
 
@@ -42,18 +50,5 @@ android {
 }
 
 dependencies {
+    implementation fileTree(dir: "libs", include: ["*.jar"])
 }
-
-//publish {
-//    bintrayUser = user
-//    bintrayKey = key
-//    userOrg = user
-//    dryRun = false
-//    groupId = 'com.github.beyka'
-//    artifactId = 'androidtiffbitmapfactory'
-//    publishVersion = '0.9.8.7'
-//    desc = 'Library for opening and saving TIFF image files on android devices'
-//    licences = ['MIT']
-//    website = 'https://github.com/Beyka/Android-TiffBitmapFactory'
-//}
-

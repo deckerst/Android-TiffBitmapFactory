@@ -1,13 +1,10 @@
 package org.beyka.tiffbitmapfactory;
 
 import android.graphics.Bitmap;
-import android.util.Log;
 
 import org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException;
-import org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException;
 import org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException;
-
-import java.io.File;
+import org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException;
 
 /**
  * Created by alexeyba on 7/17/15.
@@ -15,8 +12,7 @@ import java.io.File;
 public class TiffBitmapFactory {
 
     static {
-        System.loadLibrary("tiff");
-        System.loadLibrary("tifffactory");
+        System.loadLibrary("imageOps");
     }
 
     public enum ImageConfig {
@@ -24,149 +20,52 @@ public class TiffBitmapFactory {
          * Each pixel is stored on 4 bytes. Each channel (RGB and alpha
          * for translucency) is stored with 8 bits of precision (256
          * possible values.)
-         *
+         * <p>
          * This configuration is very flexible and offers the best
          * quality. It should be used whenever possible.
          */
-        ARGB_8888 (2),
+        ARGB_8888(2),
         /**
          * Each pixel is stored on 2 bytes and only the RGB channels are
          * encoded: red is stored with 5 bits of precision (32 possible
          * values), green is stored with 6 bits of precision (64 possible
          * values) and blue is stored with 5 bits of precision.
-         *
+         * <p>
          * This configuration can produce slight visual artifacts depending
          * on the configuration of the source. For instance, without
          * dithering, the result might show a greenish tint. To get better
          * results dithering should be applied.
-         *
+         * <p>
          * This configuration may be useful when using opaque bitmaps
          * that do not require high color fidelity.
          */
-        RGB_565 (4),
+        RGB_565(4),
         /**
          * Each pixel is stored as a single translucency (alpha) channel.
          * This is very useful to efficiently store masks for instance.
          * No color information is stored.
          * With this configuration, each pixel requires 1 byte of memory.
          */
-        ALPHA_8 (8);
+        ALPHA_8(8);
 
 
         final int ordinal;
+
         ImageConfig(int ordinal) {
             this.ordinal = ordinal;
         }
     }
 
     /**
-     * Decode file to bitmap with default options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param file - file to decode
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded
-     *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
-     */
-    public static Bitmap decodeFile(File file) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return decodeFile(file, null, null);
-    }
-
-    /**
-     * Decode file to bitmap with specified options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param file - file to decode
-     * @param options - options for decoding
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when {@link Options#inAvailableMemory} not enought to decode image
-     */
-    public static Bitmap decodeFile(File file, Options options) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return decodeFile(file, options, null);
-    }
-
-    /**
-     * Decode file to bitmap with specified options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param file - file to decode
-     * @param options - options for decoding
-     * @param listener - listener which will receive decoding progress
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when {@link Options#inAvailableMemory} not enought to decode image
-     */
-    public static Bitmap decodeFile(File file, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return nativeDecodePath(file.getAbsolutePath(), options, listener);
-    }
-
-    /**
-     * Decode path to bitmap with default options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param path - file to decode
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded
-     *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
-     */
-    public static Bitmap decodePath(String path) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return decodePath(path, null, null);
-    }
-
-    /**
-     * Decode path to bitmap with specified options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param path - file to decode
-     * @param options - options for decoding
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
-     *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
-     */
-    public static Bitmap decodePath(String path, Options options) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return decodePath(path, options);
-    }
-
-    /**
-     * Decode path to bitmap with specified options. If the specified file name is null,
-     * or cannot be decoded into a bitmap, the function returns null.
-     * @param path - file to decode
-     * @param options - options for decoding
-     * @param listener - listener which will receive decoding progress
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
-     *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
-     */
-    public static Bitmap decodePath(String path, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
-        return nativeDecodePath(path, options, listener);
-    }
-
-    /**
      * Decode file descriptor to bitmap with specified options. If the specified file name is null,
      * or cannot be decoded into a bitmap, the function returns null.
+     *
      * @param fileDescriptor - file descriptor that represent file to decode
      * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
-     *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
+     * decoded, or, if options is non-null, if options requested only the
+     * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
+     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
+     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodeFileDescriptor(int fileDescriptor) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
@@ -176,14 +75,14 @@ public class TiffBitmapFactory {
     /**
      * Decode file descriptor to bitmap with specified options. If the specified file name is null,
      * or cannot be decoded into a bitmap, the function returns null.
-     * @param fileDescriptor - file descriptor that represent file to decode
-     * @param options - options for decoding
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
      *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
+     * @param fileDescriptor - file descriptor that represent file to decode
+     * @param options        - options for decoding
+     * @return The decoded bitmap, or null if the image data could not be
+     * decoded, or, if options is non-null, if options requested only the
+     * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
+     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
+     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
@@ -193,22 +92,20 @@ public class TiffBitmapFactory {
     /**
      * Decode file descriptor to bitmap with specified options. If the specified file name is null,
      * or cannot be decoded into a bitmap, the function returns null.
-     * @param fileDescriptor - file descriptor that represent file to decode
-     * @param options - options for decoding
-     * @param listener - listener which will receive decoding progress
-     * @return The decoded bitmap, or null if the image data could not be
-     *         decoded, or, if options is non-null, if options requested only the
-     *         size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
      *
-     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while decoding image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException when {@code file} not exist or {@code file} is not tiff image
+     * @param fileDescriptor - file descriptor that represent file to decode
+     * @param options        - options for decoding
+     * @param listener       - listener which will receive decoding progress
+     * @return The decoded bitmap, or null if the image data could not be
+     * decoded, or, if options is non-null, if options requested only the
+     * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
+     * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
+     * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
         return nativeDecodeFD(fileDescriptor, options, listener);
     }
-
-    private static native Bitmap nativeDecodePath(String path, Options options, IProgressListener listener);
 
     private static native Bitmap nativeDecodeFD(int fd, Options options, IProgressListener listener);
 
@@ -230,7 +127,7 @@ public class TiffBitmapFactory {
             inJustDecodeBounds = false;
             inSampleSize = 1;
             inDirectoryNumber = 0;
-            inAvailableMemory = 8000*8000*4;
+            inAvailableMemory = 8000 * 8000 * 4;
 
             outWidth = -1;
             outHeight = -1;
@@ -240,6 +137,7 @@ public class TiffBitmapFactory {
 
         /**
          * Uses for stoping of native thread
+         *
          * @deprecated As of release 0.9.8.4, replaced by {@link Thread#interrupt()}
          */
         private volatile boolean isStoped;
@@ -247,6 +145,7 @@ public class TiffBitmapFactory {
         /**
          * Stop native decoding thread
          * If decoding is started in any thread except main, calling of this method will cause force stop of decoding and returning of null object.
+         *
          * @deprecated As of release 0.9.8.4, replaced by {@link Thread#interrupt()}
          */
         public void stop() {
@@ -300,7 +199,7 @@ public class TiffBitmapFactory {
          * To get number of directories in file see {@link #outDirectoryCount}
          */
         public int inDirectoryNumber;
-        
+
         /**
          * Number of bytes that may be allocated during the Tiff file operations.
          * <p>-1 means memory is unlimited.</p>
@@ -455,7 +354,7 @@ public class TiffBitmapFactory {
         public Photometric outPhotometric;
 
         /**
-         *  The logical order of bits within a byte.
+         * The logical order of bits within a byte.
          * <p>The specification defines these values:</p>
          * <ul>
          *  <li>1 = Pixels with lower column values are stored in the higher-order bits of the byte.</li>

@@ -13,8 +13,7 @@ import java.io.File;
 public class TiffSaver {
 
     static {
-        System.loadLibrary("tiff");
-        System.loadLibrary("tiffsaver");
+        System.loadLibrary("imageOps");
     }
 
     /**

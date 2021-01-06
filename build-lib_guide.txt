@@ -1,0 +1,49 @@
+*** Building libjpeg and libtiff with jpeg support
+
+** on Windows, install WSL with Ubuntu 20.04 LTS
+
+** on Linux:
+
+sudo apt install default-jdk unzip make g++
+
+* install SDK Manager
+wget https://dl.google.com/android/repository/commandlinetools-linux-6858069_latest.zip
+unzip commandlinetools-linux-6858069_latest.zip
+mv cmdline-tools tools
+mkdir cmdline-tools
+mv tools cmdline-tools/
+
+* run and add to .profile:
+export PATH=/home/tibo/cmdline-tools/tools:/home/tibo/cmdline-tools/tools/bin:$PATH
+export ANDROID_SDK=/home/tibo/cmdline-tools
+
+* install NDK
+sdkmanager "ndk;21.1.6352462"
+
+* download libjpeg
+wget https://www.ijg.org/files/jpegsrc.v9d.tar.gz
+tar -zxvf jpegsrc.v9d.tar.gz
+
+* download libtiff
+wget https://download.osgeo.org/libtiff/tiff-4.2.0.zip
+unzip tiff-4.2.0.zip
+
+1) compile libjpeg
+cd ~/jpeg-9d
+* copy build-lib.sh here (the configure options `--with-jpeg...` are for libtiff, but they do no harm when compiling libjpeg)
+* for each Android target:
+	- comment/uncomment target in build-lib.sh
+	- run ./build-lib.sh, which should install the library in `install`
+	- (needed once) copy `install/include` to `~/tiff-4.2.0/jpeg-9d/include`, to use the header files (.h) later
+	- copy `install/lib` to `~/tiff-4.2.0/jpeg-9d/lib/<TARGET>`, to use the library files (.a, .so) later
+
+2) compile libtiff
+cd ~/tiff-4.2.0
+* copy build-lib.sh here (make sure the configure options `--with-jpeg...` are there)
+* for each Android target:
+	- comment/uncomment target in build-lib.sh and adapt `--with-jpeg-lib-dir` value with matching target
+	- run ./build-lib.sh, which should install the library in `install`
+	- (needed once) copy `install/include/` to `<TiffBitmapFactory>/3rd-party/tiff-4.2.0/include/`
+	- (needed once) copy `jpeg-9d/include/` to `<TiffBitmapFactory>/3rd-party/jpeg-9d/include/`
+	- copy `install/lib/libtiff.so` to `<TiffBitmapFactory>/lib/src/main/libs/<TARGET>/`
+	- copy `jpeg-9d/lib/<TARGET>/libjpeg.so` to `<TiffBitmapFactory>/lib/src/main/libs/<TARGET>/`
