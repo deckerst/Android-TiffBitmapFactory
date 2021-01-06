@@ -1,3 +1,13 @@
+# Forked from https://github.com/Beyka/Android-TiffBitmapFactory on 20201113 with these changes:
+- removed Bintray configuration
+- removed noisy logs
+- removed code to convert files
+- removed code to access file by path (use file descriptor instead)
+- made compatible with JitPack (build results at https://jitpack.io/com/github/deckerst/Android-TiffBitmapFactory/<commit>/build.log)
+- use CMake
+- upgraded Gradle, AGT, target SDK
+- upgraded libtiff to 4.2.0 (with jpeg support)
+
 # Android-TiffBitmapFactory
 TiffBitmapFactory is an Android library that allows opening and saving images in *.tif format (See [Wikipedia](https://en.wikipedia.org/wiki/Tagged_Image_File_Format)) on Android devices.
 
@@ -6,24 +16,21 @@ For decoding and encoding *.tif files it uses the native library [libtiff](https
 Just now it has possibility to open tif image as mutable bitmap, read count of directory in file, apply sample rate for bitmap decoding and choose directory to decode.
 While saving there is available few(most popular) compression mods and some additiona fields that can be writen to file, like author or copyright.
 
-Minimum Android API level 8
-
-Supported architectures: all
-
 ### Installation
-Just add to your gradle dependencies :
+Add to gradle:
 ```
-compile 'com.github.beyka:androidtiffbitmapfactory:0.9.8.7'
+repositories {
+    ...
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    ...
+    implementation 'com.github.deckerst:Android-TiffBitmapFactory:<commit>'
+}
 ```
-And do not forget to add WRITE_EXTERNAL_STORAGE permission to main project manifest
 
 ### Build from sources
-To build native part of library use [Android-NDK-bundle](https://developer.android.com/tools/sdk/ndk/index.html).
-<p>To start build go to tiffbitmapfactory folder and run</p>
-
-``` Gradle
-ndk-build NDK_PROJECT_PATH=src/main
-```
+See `build-lib_guide.txt` to build native part of library.
 
 ### Usage
 #### Opening tiff file
@@ -148,9 +155,4 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-Special thanks to [dennis508](https://github.com/dennis508)    for providing of incremental reading of TIFF file
-
-
-### Applications that uses library:
-[B Tiff Viewer](https://play.google.com/store/apps/details?id=com.beyka.btiffviewer)
-
+Special thanks to [dennis508](https://github.com/dennis508) for providing incremental reading of TIFF file
