@@ -1,29 +1,36 @@
+# Forked from https://github.com/Beyka/Android-TiffBitmapFactory on 20201113 with these changes:
+- removed Bintray configuration
+- removed noisy logs
+- removed code to convert files
+- removed code to access file by path (use file descriptor instead)
+- made compatible with JitPack (build results at https://jitpack.io/com/github/deckerst/Android-TiffBitmapFactory/<commit>/build.log)
+- use CMake
+- upgraded Gradle, AGT, target SDK
+- upgraded libtiff to 4.2.0 (with jpeg support)
+
 # Android-TiffBitmapFactory
 TiffBitmapFactory is an Android library that allows opening and saving images in *.tif format (See [Wikipedia](https://en.wikipedia.org/wiki/Tagged_Image_File_Format)) on Android devices.
 
-For decoding and encoding *.tif files it uses the native library [libtiff](https://github.com/dumganhar/libtiff). Also for images that compressed with jpeg compression scheme used [libjpeg9 for android](https://github.com/Suvitruf/libjpeg-version-9-android) (the IJG code). For converting from PNG to TIFF and from TIFF to PNG used library [libpng-android](https://github.com/julienr/libpng-android).
+For decoding and encoding *.tif files it uses the native library [libtiff](https://github.com/dumganhar/libtiff). Also for images that compressed with jpeg compression scheme used [libjpeg9 for android](https://github.com/Suvitruf/libjpeg-version-9-android) (the IJG code).
 
 Just now it has possibility to open tif image as mutable bitmap, read count of directory in file, apply sample rate for bitmap decoding and choose directory to decode.
 While saving there is available few(most popular) compression mods and some additiona fields that can be writen to file, like author or copyright.
 
-Minimum Android API level 8
-
-Supported architectures: all
-
 ### Installation
-Just add to your gradle dependencies :
+Add to gradle:
 ```
-compile 'com.github.beyka:androidtiffbitmapfactory:0.9.8.7'
+repositories {
+    ...
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    ...
+    implementation 'com.github.deckerst:Android-TiffBitmapFactory:<commit>'
+}
 ```
-And do not forget to add WRITE_EXTERNAL_STORAGE permission to main project manifest
 
 ### Build from sources
-To build native part of library use [Android-NDK-bundle](https://developer.android.com/tools/sdk/ndk/index.html).
-<p>To start build go to tiffbitmapfactory folder and run</p>
-
-``` Gradle
-ndk-build NDK_PROJECT_PATH=src/main
-```
+See `build-lib_guide.txt` to build native part of library.
 
 ### Usage
 #### Opening tiff file
@@ -126,35 +133,6 @@ boolean saved = TiffSaver.appendBitmap("/sdcard/out.tif", bitmap, options);
 ```
 Every new page will be added as new directory to the end of file. If you trying to append directory to non-exisiting file - new file will be created
 
-
-#### Converting to tiff
-There is possibility for dirrect convert from some formats to TIFF. This method uses as less memory as possible. Use this method if you want create TIFF form realy big image file.
-```Java
-TiffConverter.ConverterOptions options = new TiffConverter.ConverterOptions();
-options.throwExceptions = false; //Set to true if you want use java exception mechanism;
-options.availableMemory = 128 * 1024 * 1024; //Available 128Mb for work;
-options.compressionScheme = CompressionScheme.LZW; //compression scheme for tiff
-options.appendTiff = false;//If set to true - will be created one more tiff directory, otherwise file will be overwritten
-TiffConverter.convertToTiff("/sdcard/some_image.jpg", "/sdcard/out.tif", options, progressListener);
-```
-
-If you need convert tiff to some other format:
-```Java
-TiffConverter.ConverterOptions options = new TiffConverter.ConverterOptions();
-options.throwExceptions = false; //Set to true if you want use java exception mechanism;
-options.availableMemory = 128 * 1024 * 1024; //Available 128Mb for work;
-options.readTiffDirectory = 1; //Number of tiff directory to convert;
-        
-//Convert to JPEG
-TiffConverter.convertTiffJpg("/sdcard/in.tif", "/sdcard/out.jpg", options, progressListener);
-//Convert to PNG
-TiffConverter.convertTiffPng("/sdcard/in.tif", "/sdcard/out.png", options, progressListener);
-//Convert to BMP
-TiffConverter.convertTiffBmp("/sdcard/in.tif", "/sdcard/out.bmp", options, progressListener);
-```
-For now library support JPEG, PNG and BMP formats for converting.
-
-
 #### Progress listener
 All operations(read, create, convert) have support for progress reporting.
 ```Java
@@ -177,9 +155,4 @@ This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
 MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
-Special thanks to [dennis508](https://github.com/dennis508)    for providing of incremental reading of TIFF file
-
-
-### Applications that uses library:
-[B Tiff Viewer](https://play.google.com/store/apps/details?id=com.beyka.btiffviewer)
-
+Special thanks to [dennis508](https://github.com/dennis508) for providing incremental reading of TIFF file
