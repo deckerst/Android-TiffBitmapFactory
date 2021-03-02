@@ -452,7 +452,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -478,7 +478,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
         rowPerStrip = origheight;
     }
 
-    int writedLines = 0;
+    int targetY = 0;
     int nextStripOffset = 0;
     int globalLineCounter = 0;
 
@@ -616,8 +616,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
             if (isSecondRasterExist) {
                 _TIFFmemcpy(matrixBottomLine, rasterForBottomLine /*+ lineAddrToCopyBottomLine * origwidth*/, sizeof(unsigned int) * origwidth);
             }
-            int workWritedLines = writedLines;
-            for (int resBmpY = workWritedLines, workY = 0; resBmpY < *bitmapHeight && workY < rowPerStrip; /*wj++,*/ workY++/*= inSampleSize*/) {
+            for (int sourceStripY = 0; targetY < *bitmapHeight && sourceStripY < rowPerStrip; sourceStripY++) {
                 if (checkStop()) {
                     if (raster) {
                         _TIFFfree(raster);
@@ -641,25 +640,22 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
 
                 // if total line of source image is equal to inSampleSize*N then process this line
                 if (globalLineCounter % inSampleSize == 0) {
-                    for (int resBmpX = 0, workX = 0; resBmpX < *bitmapWidth; resBmpX++, workX += inSampleSize) {
-                        jint crPix = applyFilterForStrip(workX, workY, raster, matrixTopLine, matrixBottomLine, rowPerStrip, globalLineCounter, isSecondRasterExist);
-                        pixels[resBmpY * *bitmapWidth + resBmpX] = crPix;
+                    for (int targetX = 0, sourceStripX = 0; targetX < *bitmapWidth; targetX++, sourceStripX += inSampleSize) {
+                        jint crPix = applyFilterForStrip(sourceStripX, sourceStripY, raster, matrixTopLine, matrixBottomLine, rowPerStrip, globalLineCounter, isSecondRasterExist);
+                        pixels[targetY * *bitmapWidth + targetX] = crPix;
                     }
-                    //if line was processed - increment counter of lines that was writed to result image
-                    writedLines++;
-                    //and incremetncounter of current Y for writing
-                    resBmpY++;
+                    targetY++;
                 }
-                if (workY == rowPerStrip - 1 && i + rowPerStrip < origheight) {
-                    _TIFFmemcpy(matrixTopLine, raster + workY * origwidth, sizeof(unsigned int) * origwidth);
-                }
-                //incremetn global source image line counter
+                //increment global source image line counter
                 globalLineCounter++;
 
+                if (sourceStripY == rowPerStrip - 1 && i + rowPerStrip < origheight) {
+                    _TIFFmemcpy(matrixTopLine, raster + sourceStripY * origwidth, sizeof(unsigned int) * origwidth);
+                }
             }
         }
     }
-    LOGI("Decoding finished. Free memmory");
+    LOGI("Decoding finished. Free memory");
 
     //Close Buffers
     if (raster) {
@@ -720,7 +716,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
                 *bitmapHeight = buf;
                 break;
         }
-    } else if (origorientation == 2 || origorientation == 3 || origorientation == 6 || origorientation == 7) {
+    } else if (origorientation == ORIENTATION_TOPRIGHT || origorientation == ORIENTATION_BOTRIGHT || origorientation == ORIENTATION_RIGHTTOP || origorientation == ORIENTATION_RIGHTBOT) {
         flipPixelsHorizontal(*bitmapWidth, *bitmapHeight, pixels);
     }
 
@@ -769,7 +765,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -799,7 +795,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
         rowPerStrip = origheight;
     }
 
-    int writtenLines = 0;
+    int targetY = 0;
     int nextStripOffset = 0;
     int globalLineCounter = 0;
 
@@ -930,14 +926,12 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                     }
                 }
             }
-
         }
 
         if (isSecondRasterExist) {
             _TIFFmemcpy(matrixBottomLine, rasterForBottomLine /*+ lineAddrToCopyBottomLine * origwidth*/, sizeof(unsigned int) * origwidth);
         }
-        int workWrittenLines = writtenLines;
-        for (int targetY = workWrittenLines, workY = 0; targetY < *bitmapHeight && workY < rowPerStrip; /*wj++,*/ workY++/*= inSampleSize*/) {
+        for (int sourceStripY = 0; targetY < *bitmapHeight && sourceStripY < rowPerStrip; sourceStripY++) {
             if (checkStop()) {
                 if (raster) {
                     _TIFFfree(raster);
@@ -959,28 +953,28 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                 return nullptr;
             }
 
-            // if total line of source image is equal to inSampleSize*N then process this line
-            if (globalLineCounter % inSampleSize == 0) {
-                for (int targetX = 0, workX = 0; targetX < *bitmapWidth; workX += inSampleSize) {
-                    jint crPix;
-                    if (inSampleSize == 1) {
-                        crPix = raster[workY * origwidth + workX];
-                    } else {
-                        crPix = applyFilterForStrip(workX, workY, raster, matrixTopLine, matrixBottomLine, rowPerStrip, globalLineCounter, isSecondRasterExist);
+            if (i + sourceStripY >= boundY) {
+                // if total line of source image is equal to inSampleSize*N then process this line
+                if (globalLineCounter % inSampleSize == 0) {
+                    for (int targetX = 0, sourceStripX = 0; targetX < *bitmapWidth; sourceStripX += inSampleSize) {
+                        jint crPix;
+                        if (inSampleSize == 1) {
+                            crPix = raster[sourceStripY * origwidth + sourceStripX];
+                        } else {
+                            crPix = applyFilterForStrip(sourceStripX, sourceStripY, raster, matrixTopLine, matrixBottomLine, rowPerStrip, globalLineCounter, isSecondRasterExist);
+                        }
+                        pixels[targetY * *bitmapWidth + targetX] = crPix;
+                        targetX++;
                     }
-                    pixels[targetY * *bitmapWidth + targetX] = crPix;
-                    targetX++;
+                    targetY++;
                 }
-                //if line was processed - increment counter of lines that was written to result image
-                writtenLines++;
-                //and increment counter of current Y for writing
-                targetY++;
+                //increment global source image line counter
+                globalLineCounter++;
             }
-            if (workY == rowPerStrip - 1 && i + rowPerStrip < origheight) {
-                _TIFFmemcpy(matrixTopLine, raster + workY * origwidth, sizeof(unsigned int) * origwidth);
+
+            if (sourceStripY == rowPerStrip - 1 && i + rowPerStrip < origheight) {
+                _TIFFmemcpy(matrixTopLine, raster + sourceStripY * origwidth, sizeof(unsigned int) * origwidth);
             }
-            //increment global source image line counter
-            globalLineCounter++;
         }
     }
     LOGI("Decoding finished. Free memory");
@@ -1046,7 +1040,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                 break;
         }
 
-    } else if (origorientation == 2 || origorientation == 3 || origorientation == 6 || origorientation == 7) {
+    } else if (origorientation == ORIENTATION_TOPRIGHT || origorientation == ORIENTATION_BOTRIGHT || origorientation == ORIENTATION_RIGHTTOP || origorientation == ORIENTATION_RIGHTBOT) {
         flipPixelsHorizontal(*bitmapWidth, *bitmapHeight, pixels);
     }
 
@@ -1057,7 +1051,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -1278,7 +1272,7 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -1603,7 +1597,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -1858,7 +1852,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     LOGII("estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -2147,7 +2141,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
 
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }
@@ -2288,7 +2282,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
 
     if (estimateMem > availableMemory) {
         if (throwException) {
-            throw_not_enought_memory_exception(env, availableMemory, estimateMem);
+            throw_not_enough_memory_exception(env, availableMemory, estimateMem);
         }
         return nullptr;
     }

@@ -9,12 +9,12 @@ extern "C" {
 
 #include "NativeExceptions.h"
 
-void throw_not_enought_memory_exception(JNIEnv *env, int available, int need)
+void throw_not_enough_memory_exception(JNIEnv *env, int available, int need)
 {
     jclass exClass;
     jmethodID exConstructorID;
     jobject exObj;
-    const char *className = "org/beyka/tiffbitmapfactory/exceptions/NotEnoughtMemoryException" ;
+    const char *className = "org/beyka/tiffbitmapfactory/exceptions/NotEnoughMemoryException" ;
 
     exClass = env->FindClass(className);
 

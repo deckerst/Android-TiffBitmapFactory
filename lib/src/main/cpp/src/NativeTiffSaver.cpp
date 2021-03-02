@@ -255,7 +255,7 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
         int pixelsBufferSize = img_width * img_height;
         uint32 *array = (uint32 *) malloc(sizeof(uint32) * pixelsBufferSize);
         if (!array) {
-            throw_not_enought_memory_exception(env, sizeof(uint32) * pixelsBufferSize, 0);//todo change for estimating memory
+            throw_not_enough_memory_exception(env, sizeof(uint32) * pixelsBufferSize, 0);//todo change for estimating memory
             return JNI_FALSE;
         }
 

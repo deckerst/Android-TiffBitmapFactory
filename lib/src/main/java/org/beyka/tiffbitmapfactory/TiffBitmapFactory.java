@@ -4,7 +4,7 @@ import android.graphics.Bitmap;
 
 import org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException;
 import org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException;
-import org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException;
+import org.beyka.tiffbitmapfactory.exceptions.NotEnoughMemoryException;
 
 /**
  * Created by alexeyba on 7/17/15.
@@ -66,9 +66,9 @@ public class TiffBitmapFactory {
      * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
      * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
      * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
+     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
-    public static Bitmap decodeFileDescriptor(int fileDescriptor) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
+    public static Bitmap decodeFileDescriptor(int fileDescriptor) throws CantOpenFileException, DecodeTiffException, NotEnoughMemoryException {
         return decodeFileDescriptor(fileDescriptor, null, null);
     }
 
@@ -83,9 +83,9 @@ public class TiffBitmapFactory {
      * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
      * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
      * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
+     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
-    public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
+    public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options) throws CantOpenFileException, DecodeTiffException, NotEnoughMemoryException {
         return decodeFileDescriptor(fileDescriptor, options, null);
     }
 
@@ -101,9 +101,9 @@ public class TiffBitmapFactory {
      * size be returned (in {@link Options#outWidth}, {@link Options#outHeight}, {@link Options#outDirectoryCount})
      * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException       when error occure while decoding image
      * @throws org.beyka.tiffbitmapfactory.exceptions.CantOpenFileException     when {@code file} not exist or {@code file} is not tiff image
-     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughtMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
+     * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
-    public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughtMemoryException {
+    public static Bitmap decodeFileDescriptor(int fileDescriptor, Options options, IProgressListener listener) throws CantOpenFileException, DecodeTiffException, NotEnoughMemoryException {
         return nativeDecodeFD(fileDescriptor, options, listener);
     }
 
