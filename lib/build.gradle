@@ -1,15 +1,14 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion '30.0.2'
-    ndkVersion "21.1.6352462"
+    compileSdkVersion 33
+    ndkVersion "25.2.9519653"
 
     def softwareName
 
     defaultConfig {
-        minSdkVersion 8
-        targetSdkVersion 30
+        minSdkVersion 19
+        targetSdkVersion 33
         versionCode 987
         versionName "0.9.8.7"
 
@@ -38,12 +37,10 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.10.2"
+            version "3.22.1"
         }
     }
-}
 
-android {
     lintOptions {
         abortOnError false
     }

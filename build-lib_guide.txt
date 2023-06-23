@@ -18,7 +18,7 @@ export PATH=/home/tibo/cmdline-tools/tools:/home/tibo/cmdline-tools/tools/bin:$P
 export ANDROID_SDK=/home/tibo/cmdline-tools
 
 * install NDK
-sdkmanager "ndk;21.1.6352462"
+sdkmanager "ndk;25.2.9519653"
 
 * download libjpeg
 wget https://www.ijg.org/files/jpegsrc.v9d.tar.gz

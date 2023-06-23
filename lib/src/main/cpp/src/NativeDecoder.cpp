@@ -39,7 +39,7 @@ NativeDecoder::NativeDecoder(JNIEnv *e, jclass c, jint fd, jobject opts, jobject
 }
 
 NativeDecoder::~NativeDecoder() {
-    LOGI("Destructor");
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Destructor");
     if (image) {
         TIFFClose(image);
         image = nullptr;
@@ -68,6 +68,8 @@ NativeDecoder::~NativeDecoder() {
 }
 
 jobject NativeDecoder::getBitmap() {
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "getBitmap");
+
     //init signal handler for catch SIGSEGV error that could be raised in libtiff
     struct sigaction act{};
     memset(&act, 0, sizeof(act));
@@ -75,13 +77,13 @@ jobject NativeDecoder::getBitmap() {
     act.sa_sigaction = generalErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
     //check for error
     if (setjmp(NativeDecoder::general_buf)) {
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -99,7 +101,7 @@ jobject NativeDecoder::getBitmap() {
     jint inSampleSize = env->GetIntField(optionsObject, gOptions_sampleSizeFieldID);
     if (inSampleSize != 1 && inSampleSize % 2 != 0) {
         const char *message = "inSampleSize should be power of 2\0";
-        LOGE(message);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
         if (throwException) {
             throwDecodeFileException(message);
         }
@@ -114,7 +116,7 @@ jobject NativeDecoder::getBitmap() {
 
     jfieldID gOptions_DirectoryCountFieldID = env->GetFieldID(jBitmapOptionsClass, "inDirectoryNumber", "I");
     jint inDirectoryNumber = env->GetIntField(optionsObject, gOptions_DirectoryCountFieldID);
-    LOGII("param directoryCount", inDirectoryNumber);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "param directoryCount", inDirectoryNumber);
 
     jfieldID gOptions_AvailableMemoryFieldID = env->GetFieldID(jBitmapOptionsClass, "inAvailableMemory", "J");
     unsigned long inAvailableMemory = env->GetLongField(optionsObject, gOptions_AvailableMemoryFieldID);
@@ -127,7 +129,7 @@ jobject NativeDecoder::getBitmap() {
     }
 
     if (config == nullptr) {
-        LOGI("config is nullptr, creating default options");
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "config is nullptr, creating default options");
         jclass bitmapConfig = env->FindClass("org/beyka/tiffbitmapfactory/TiffBitmapFactory$ImageConfig");
         jfieldID argb8888FieldID = env->GetStaticFieldID(bitmapConfig, "ARGB_8888", "Lorg/beyka/tiffbitmapfactory/TiffBitmapFactory$ImageConfig;");
         config = env->GetStaticObjectField(bitmapConfig, argb8888FieldID);
@@ -145,11 +147,11 @@ jobject NativeDecoder::getBitmap() {
     //Open tiff file
     const char *strPath = nullptr;
     if (decodingMode == DECODE_MODE_FILE_DESCRIPTOR) {
-        LOGII("nativeTiffOpen", jFd);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "nativeTiffOpen", jFd);
         image = TIFFFdOpen(jFd, "", "r");
     } else if (decodingMode == DECODE_MODE_FILE_PATH) {
         strPath = env->GetStringUTFChars(jPath, nullptr);
-        LOGIS("nativeTiffOpen", strPath);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %s", "nativeTiffOpen", strPath);
         image = TIFFOpen(strPath, "r");
     }
 
@@ -159,10 +161,10 @@ jobject NativeDecoder::getBitmap() {
         }
 
         if (decodingMode == DECODE_MODE_FILE_PATH) {
-            LOGES("Can\'t open bitmap", strPath);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t open bitmap path=%s", strPath);
             env->ReleaseStringUTFChars(jPath, strPath);
         } else {
-            LOGEI("Can\'t open file descriptor", jFd);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t open file descriptor fd=%d", jFd);
         }
         return nullptr;
     } else {
@@ -170,7 +172,7 @@ jobject NativeDecoder::getBitmap() {
             env->ReleaseStringUTFChars(jPath, strPath);
         }
     }
-    LOGI("Tiff is open");
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Tiff is open");
 
     TIFFSetDirectory(image, inDirectoryNumber);
     TIFFGetField(image, TIFFTAG_IMAGEWIDTH, &origwidth);
@@ -178,7 +180,7 @@ jobject NativeDecoder::getBitmap() {
 
     //Read decode bounds if exists
     if (decodeArea) {
-        LOGI("Decode bounds present");
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Decode bounds present");
         jclass decodeAreaClass = env->FindClass("org/beyka/tiffbitmapfactory/DecodeArea");
         jfieldID xFieldID = env->GetFieldID(decodeAreaClass, "x", "I");
         jfieldID yFieldID = env->GetFieldID(decodeAreaClass, "y", "I");
@@ -191,7 +193,7 @@ jobject NativeDecoder::getBitmap() {
         boundHeight = env->GetIntField(decodeArea, heightFieldID);
         if (boundX >= origwidth - 1) {
             const char *message = "X of left top corner of decode area should be less than image width";
-            LOGE(*message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
             if (throwException) {
                 throwDecodeFileException(message);
             }
@@ -200,7 +202,7 @@ jobject NativeDecoder::getBitmap() {
         }
         if (boundY >= origheight - 1) {
             const char *message = "Y of left top corner of decode area should be less than image height";
-            LOGE(*message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
             if (throwException) {
                 throwDecodeFileException(message);
             }
@@ -215,7 +217,7 @@ jobject NativeDecoder::getBitmap() {
 
         if (boundWidth < 1) {
             const char *message = "Width of decode area can\'t be less than 1";
-            LOGE(*message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
             if (throwException) {
                 throwDecodeFileException(message);
             }
@@ -224,7 +226,7 @@ jobject NativeDecoder::getBitmap() {
         }
         if (boundHeight < 1) {
             const char *message = "Height of decode area can\'t be less than 1";
-            LOGE(*message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
             if (throwException) {
                 throwDecodeFileException(message);
             }
@@ -232,10 +234,10 @@ jobject NativeDecoder::getBitmap() {
             return nullptr;
         }
 
-        LOGII("Decode X", boundX);
-        LOGII("Decode Y", boundY);
-        LOGII("Decode width", boundWidth);
-        LOGII("Decode height", boundHeight);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Decode X", boundX);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Decode Y", boundY);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Decode width", boundWidth);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Decode height", boundHeight);
 
         hasBounds = 1;
         env->DeleteLocalRef(decodeAreaClass);
@@ -269,7 +271,7 @@ jobject NativeDecoder::createBitmap(int inSampleSize, int directoryNumber) {
     TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bitdepth);
     if (bitdepth != 1 && bitdepth != 4 && bitdepth != 8 && bitdepth != 16) {
         const char *err = "Only 1, 4, 8 and 16 bits per sample are supported";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -330,7 +332,7 @@ jobject NativeDecoder::createBitmap(int inSampleSize, int directoryNumber) {
         if (raster) {
             free(raster);
         }
-        LOGI("Thread stopped");
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
         return nullptr;
     }
 
@@ -350,7 +352,7 @@ jobject NativeDecoder::createBitmap(int inSampleSize, int directoryNumber) {
     }
 
     if (processedBuffer == nullptr) {
-        LOGE("Error while decoding image");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Error while decoding image");
         return nullptr;
     }
 
@@ -371,7 +373,7 @@ jobject NativeDecoder::createBitmap(int inSampleSize, int directoryNumber) {
         if (processedBuffer) {
             free(processedBuffer);
         }
-        LOGI("Thread stopped");
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
         return nullptr;
     }
 
@@ -392,7 +394,7 @@ jobject NativeDecoder::createBitmap(int inSampleSize, int directoryNumber) {
     void *bitmapPixels;
     if ((ret = AndroidBitmap_lockPixels(env, java_bitmap, &bitmapPixels)) < 0) {
         //error
-        LOGE("Lock pixels failed");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Lock pixels failed");
         return nullptr;
     }
     int pixelsCount = newBitmapWidth * newBitmapHeight;
@@ -421,11 +423,11 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
     act.sa_sigaction = stripErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
-    LOGII("width", origwidth);
-    LOGII("height", origheight);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "width", origwidth);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "height", origheight);
 
     jint *pixels = nullptr;
     *bitmapWidth = origwidth / inSampleSize;
@@ -433,23 +435,23 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
     uint32 pixelsBufferSize = *bitmapWidth * *bitmapHeight;
     int origImageBufferSize = origwidth * origheight;
 
-    LOGII("new width", *bitmapWidth);
-    LOGII("new height", *bitmapHeight);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "new width", *bitmapWidth);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "new height", *bitmapHeight);
 
     uint32 stripSize = TIFFStripSize(image);
     uint32 stripMax = TIFFNumberOfStrips(image);
-    LOGII("strip size ", stripSize);
-    LOGII("stripMax  ", stripMax);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "strip size ", stripSize);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripMax  ", stripMax);
     int rowPerStrip = -1;
     TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &rowPerStrip);
-    LOGII("rowsperstrip", rowPerStrip);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "rowsperstrip", rowPerStrip);
 
     unsigned long estimateMem = 0;
     estimateMem += (sizeof(jint) * pixelsBufferSize); //buffer for decoded pixels
     estimateMem += (origwidth * sizeof(uint32)); //work line for rotate strip
     estimateMem += (origwidth * rowPerStrip * sizeof(uint32) * 2); //current and next strips
     estimateMem += (sizeof(jint) * origwidth * 2); //bottom and top lines for reading pixel(matrixBottomLine, matrixTopLine)
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -459,11 +461,11 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
 
     pixels = (jint *) malloc(sizeof(jint) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
-    uint32 *work_line_buf = (uint32 *) _TIFFmalloc(origwidth * sizeof(uint32));
+    auto *work_line_buf = (uint32 *) _TIFFmalloc(origwidth * sizeof(uint32));
 
     uint32 *raster;
     uint32 *rasterForBottomLine; // in this raster copy next strip for getting bottom line in matrix color selection
@@ -482,8 +484,8 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
     int nextStripOffset = 0;
     int globalLineCounter = 0;
 
-    unsigned int *matrixTopLine = (uint32 *) malloc(sizeof(jint) * origwidth);
-    unsigned int *matrixBottomLine = (uint32 *) malloc(sizeof(jint) * origwidth);
+    auto *matrixTopLine = (uint32 *) malloc(sizeof(jint) * origwidth);
+    auto *matrixBottomLine = (uint32 *) malloc(sizeof(jint) * origwidth);
 
     int isSecondRasterExist = 0;
     int ok = 1;
@@ -509,7 +511,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -634,7 +636,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
                         _TIFFfree(matrixBottomLine);
                         matrixBottomLine = nullptr;
                     }
-                    LOGI("Thread stopped");
+                    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                     return nullptr;
                 }
 
@@ -655,7 +657,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
             }
         }
     }
-    LOGI("Decoding finished. Free memory");
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Decoding finished. Free memory");
 
     //Close Buffers
     if (raster) {
@@ -724,7 +726,7 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
 }
 
 jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *bitmapWidth, int *bitmapHeight) {
-    LOGI("getSampledRasterFromStripWithBounds");
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "getSampledRasterFromStripWithBounds");
 
     //init signal handler for catch SIGSEGV error that could be raised in libtiff
     struct sigaction act;
@@ -733,11 +735,11 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     act.sa_sigaction = stripErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
-    LOGII("width", origwidth);
-    LOGII("height", origheight);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "width", origwidth);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "height", origheight);
 
     jint *pixels = nullptr;
     *bitmapWidth = origwidth / inSampleSize;
@@ -745,16 +747,16 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     uint32 pixelsBufferSize = *bitmapWidth * *bitmapHeight;
     int origImageBufferSize = origwidth * origheight;
 
-    LOGII("new width", *bitmapWidth);
-    LOGII("new height", *bitmapHeight);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "new width", *bitmapWidth);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "new height", *bitmapHeight);
 
     uint32 stripSize = TIFFStripSize(image);
     uint32 stripMax = TIFFNumberOfStrips(image);
-    LOGII("strip size ", stripSize);
-    LOGII("stripMax  ", stripMax);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "strip size ", stripSize);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripMax  ", stripMax);
     int rowPerStrip = -1;
     TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &rowPerStrip);
-    LOGII("rowsperstrip", rowPerStrip);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "rowsperstrip", rowPerStrip);
 
     unsigned long estimateMem = 0;
     estimateMem += (sizeof(jint) * pixelsBufferSize); //temp buffer for decoded pixels
@@ -762,7 +764,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     estimateMem += (origwidth * sizeof(uint32)); //work line for rotate strip
     estimateMem += (origwidth * rowPerStrip * sizeof(uint32) * 2); //current and next strips
     estimateMem += (sizeof(jint) * origwidth * 2); //bottom and top lines for reading pixel(matrixBottomLine, matrixTopLine)
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -776,11 +778,11 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
 
     pixels = (jint *) malloc(sizeof(jint) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
-    uint32 *work_line_buf = (uint32 *) _TIFFmalloc(origwidth * sizeof(uint32));
+    auto *work_line_buf = (uint32 *) _TIFFmalloc(origwidth * sizeof(uint32));
 
     uint32 *raster;
     uint32 *rasterForBottomLine; // in this raster copy next strip for getting bottom line in matrix color selection
@@ -799,8 +801,8 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     int nextStripOffset = 0;
     int globalLineCounter = 0;
 
-    unsigned int *matrixTopLine = (uint32 *) malloc(sizeof(jint) * origwidth);
-    unsigned int *matrixBottomLine = (uint32 *) malloc(sizeof(jint) * origwidth);
+    auto *matrixTopLine = (uint32 *) malloc(sizeof(jint) * origwidth);
+    auto *matrixBottomLine = (uint32 *) malloc(sizeof(jint) * origwidth);
 
     int isSecondRasterExist = 0;
     int ok = 1;
@@ -826,7 +828,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -949,7 +951,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                     _TIFFfree(matrixBottomLine);
                     matrixBottomLine = nullptr;
                 }
-                LOGI("Thread stopped");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                 return nullptr;
             }
 
@@ -977,7 +979,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
             }
         }
     }
-    LOGI("Decoding finished. Free memory");
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Decoding finished. Free memory");
 
     //Close Buffers
     if (raster) {
@@ -1048,7 +1050,7 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
 
     estimateMem = (sizeof(jint) * pixelsBufferSize); //temp buffer for decoded pixels
     estimateMem += (sizeof(jint) * tmpPixelBufferSize); //final buffer that will store original image
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -1253,7 +1255,7 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
     act.sa_sigaction = tileErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
     jint *pixels = nullptr;
@@ -1269,7 +1271,7 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
     estimateMem += (sizeof(jint) * pixelsBufferSize); //buffer for decoded pixels
     estimateMem += (tileWidth * tileHeight * sizeof(uint32)) * 3; //current, left and right tiles buffers
     estimateMem += (tileWidth * sizeof(uint32)); //work line for rotate tile
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -1279,20 +1281,20 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
 
     pixels = (jint *) malloc(sizeof(jint) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
     uint32 row, column;
 
     //main worker tile
-    uint32 *rasterTile = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTile = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
     //left tile
-    uint32 *rasterTileLeft = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTileLeft = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
     //right tile
-    uint32 *rasterTileRight = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTileRight = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
 
-    uint32 *work_line_buf = (uint32 *) _TIFFmalloc(tileWidth * sizeof(uint32));
+    auto *work_line_buf = (uint32 *) _TIFFmalloc(tileWidth * sizeof(uint32));
 
     //this variable calculate processed pixels for x and y direction to make right offsets at the begining of next tile
     //offset calculated from condition globalProcessed % inSampleSize should be 0
@@ -1319,7 +1321,7 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -1456,7 +1458,7 @@ jint *NativeDecoder::getSampledRasterFromTile(int inSampleSize, int *bitmapWidth
                             _TIFFfree(work_line_buf);
                             work_line_buf = nullptr;
                         }
-                        LOGI("Thread stopped");
+                        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                         return nullptr;
                     }
 
@@ -1569,7 +1571,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     act.sa_sigaction = tileErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
     //First read all tiles that are on necessary area
@@ -1579,8 +1581,8 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     TIFFGetField(image, TIFFTAG_TILELENGTH, &tileHeight);
 
     //find first and last tile to process
-    uint32 firstTileX = (uint32) (boundX / tileWidth);
-    uint32 firstTileY = (uint32) (boundY / tileHeight);
+    auto firstTileX = (uint32) (boundX / tileWidth);
+    auto firstTileY = (uint32) (boundY / tileHeight);
 
     uint32 lastTileX = (uint32) ((boundX + boundWidth) / tileWidth) + 1;
     uint32 lastTileY = (uint32) ((boundY + boundHeight) / tileHeight) + 1;
@@ -1594,7 +1596,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     estimateMem += (sizeof(jint) * pixelsBufferSize); //buffer for decoded pixels
     estimateMem += (tileWidth * tileHeight * sizeof(uint32)) * 3; //current, left and right tiles buffers
     estimateMem += (tileWidth * sizeof(uint32)); //work line for rotate tile
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -1604,7 +1606,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
 
     pixels = (jint *) malloc(sizeof(jint) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
@@ -1615,13 +1617,13 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
     uint32 row, column, rowDest, columnDest;
 
     //main worker tile
-    uint32 *rasterTile = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTile = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
     //left tile
-    uint32 *rasterTileLeft = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTileLeft = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
     //right tile
-    uint32 *rasterTileRight = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
+    auto *rasterTileRight = (uint32 *) _TIFFmalloc(tileWidth * tileHeight * sizeof(uint32));
 
-    uint32 *work_line_buf = (uint32 *) _TIFFmalloc(tileWidth * sizeof(uint32));
+    auto *work_line_buf = (uint32 *) _TIFFmalloc(tileWidth * sizeof(uint32));
 
     //check for error
     if (setjmp(NativeDecoder::tile_buf)) {
@@ -1643,7 +1645,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -1767,7 +1769,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
                         _TIFFfree(work_line_buf);
                         work_line_buf = nullptr;
                     }
-                    LOGI("Thread stopped");
+                    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                     return nullptr;
                 }
 
@@ -1849,7 +1851,7 @@ jint *NativeDecoder::getSampledRasterFromTileWithBounds(int inSampleSize, int *b
 
     estimateMem = (sizeof(jint) * pixelsBufferSize); //buffer for decoded pixels
     estimateMem += (sizeof(jint) * tmpPixelBufferSize); //finall buffer
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
     if (estimateMem > availableMemory) {
         if (throwException) {
             throw_not_enough_memory_exception(env, availableMemory, estimateMem);
@@ -2121,7 +2123,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
     act.sa_sigaction = imageErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
     //buffer size for decoding tiff image in RGBA format
@@ -2137,7 +2139,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
     if (inSampleSize > 1) {
         estimateMem += pixelsBufferSize; //if inSmapleSize greater than 1 we need aditional vevory for scaled image
     }
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
 
     if (estimateMem > availableMemory) {
         if (throwException) {
@@ -2150,7 +2152,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
 
     origBuffer = (unsigned int *) _TIFFmalloc(origBufferSize);
     if (origBuffer == nullptr) {
-        LOGE("Can\'t allocate memory for origBuffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for origBuffer");
         return nullptr;
     }
 
@@ -2168,7 +2170,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -2179,7 +2181,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
     if (0 == TIFFReadRGBAImageOriented(image, origwidth, origheight, origBuffer, ORIENTATION_TOPLEFT, 0)) {
         free(origBuffer);
         const char *message = "Error reading image";
-        LOGE(*message);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
         if (throwException) {
             throwDecodeFileException(message);
         }
@@ -2193,7 +2195,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
         // Sample the buffer.
         pixels = (jint *) malloc(pixelsBufferSize);
         if (pixels == nullptr) {
-            LOGE("Can\'t allocate memory for temp buffer");
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
             return nullptr;
         } else {
             for (int targetY = 0, sourceY = 0; targetY < *bitmapHeight; targetY++, sourceY += inSampleSize) {
@@ -2210,7 +2212,7 @@ jint *NativeDecoder::getSampledRasterFromImage(int inSampleSize, int *bitmapWidt
                         free(pixels);
                         pixels = nullptr;
                     }
-                    LOGI("Thread stopped");
+                    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                     return nullptr;
                 }
 
@@ -2262,7 +2264,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
     act.sa_sigaction = imageErrorHandler;
     act.sa_flags = SA_SIGINFO | SA_ONSTACK;
     if (sigaction(SIGSEGV, &act, 0) < 0) {
-        LOGE("Can\'t setup signal handler. Working without errors catching mechanism");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t setup signal handler. Working without errors catching mechanism");
     }
 
     //buffer size for decoding tiff image in RGBA format
@@ -2278,7 +2280,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
     //if (inSampleSize > 1) {
     estimateMem += pixelsBufferSize; //if inSampleSize greater than 1 we need additional memory for scaled image
     //}
-    LOGII("estimateMem", estimateMem);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "estimateMem", estimateMem);
 
     if (estimateMem > availableMemory) {
         if (throwException) {
@@ -2302,7 +2304,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
         }
 
         const char *err = "Caught SIGSEGV signal(Segmentation fault or invalid memory reference)";
-        LOGE(err);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", err);
         if (throwException) {
             throwDecodeFileException(err);
         }
@@ -2312,14 +2314,14 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
 
     origBuffer = (unsigned int *) _TIFFmalloc(origBufferSize);
     if (origBuffer == nullptr) {
-        LOGE("Can\'t allocate memory for origBuffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for origBuffer");
         return nullptr;
     }
 
     if (0 == TIFFReadRGBAImageOriented(image, origwidth, origheight, origBuffer, ORIENTATION_TOPLEFT, 0)) {
         free(origBuffer);
         const char *message = "Error reading image";
-        LOGE(*message);
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "%s", message);
         if (throwException) {
             throwDecodeFileException(message);
         }
@@ -2331,7 +2333,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
     // Sample the buffer.
     pixels = (jint *) malloc(pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     } else {
         for (int targetY = 0, sourceY = boundY; targetY < *bitmapHeight; targetY++, sourceY += inSampleSize) {
@@ -2348,7 +2350,7 @@ jint *NativeDecoder::getSampledRasterFromImageWithBounds(int inSampleSize, int *
                     free(pixels);
                     pixels = nullptr;
                 }
-                LOGI("Thread stopped");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
                 return nullptr;
             }
 
@@ -2515,9 +2517,9 @@ int NativeDecoder::getDecodeMethod() {
         uint32 stripSize = TIFFStripSize(image);
         uint32 stripMax = TIFFNumberOfStrips(image);
         int estimate = origwidth * 3;
-        LOGII("RPS", rowPerStrip);
-        LOGII("stripSize", stripSize);
-        LOGII("stripMax", stripMax);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "RPS", rowPerStrip);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripSize", stripSize);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripMax", stripMax);
         if (rowPerStrip != -1 && stripSize > 0 && stripMax > 1 && rowPerStrip < origheight) {
             method = DECODE_METHOD_STRIP;
         } else {
@@ -2525,7 +2527,7 @@ int NativeDecoder::getDecodeMethod() {
         }
     }
 
-    LOGII("Decode method", method);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Decode method", method);
     return method;
 }
 
@@ -2693,7 +2695,7 @@ jbyte *NativeDecoder::createBitmapAlpha8(jint *raster, int bitmapWidth, int bitm
     int pixelsBufferSize = bitmapWidth * bitmapHeight;
     pixels = (jbyte *) malloc(sizeof(jbyte) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
@@ -2703,7 +2705,7 @@ jbyte *NativeDecoder::createBitmapAlpha8(jint *raster, int bitmapWidth, int bitm
                 free(pixels);
                 pixels = nullptr;
             }
-            LOGI("Thread stopped");
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
             return nullptr;
         }
         for (int j = 0; j < bitmapHeight; j++) {
@@ -2727,7 +2729,7 @@ unsigned short *NativeDecoder::createBitmapRGB565(jint *buffer, int bitmapWidth,
     int pixelsBufferSize = bitmapWidth * bitmapHeight;
     pixels = (unsigned short *) malloc(sizeof(unsigned short) * pixelsBufferSize);
     if (pixels == nullptr) {
-        LOGE("Can\'t allocate memory for temp buffer");
+        __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "Can\'t allocate memory for temp buffer");
         return nullptr;
     }
 
@@ -2737,7 +2739,7 @@ unsigned short *NativeDecoder::createBitmapRGB565(jint *buffer, int bitmapWidth,
                 free(pixels);
                 pixels = nullptr;
             }
-            LOGI("Thread stopped");
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", "Thread stopped");
             return nullptr;
         }
 
@@ -2792,7 +2794,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     jclass gOptions_ImageOrientationClass = env->FindClass("org/beyka/tiffbitmapfactory/Orientation");
     jfieldID gOptions_ImageOrientationFieldId = nullptr;
     bool flipHW = false;
-    LOGII("Orientation", origorientation);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "Orientation", origorientation);
     switch (origorientation) {
         case ORIENTATION_TOPLEFT:
             gOptions_ImageOrientationFieldId = env->GetStaticFieldID(gOptions_ImageOrientationClass, "TOP_LEFT", "Lorg/beyka/tiffbitmapfactory/Orientation;");
@@ -2841,15 +2843,15 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     float xresolution, yresolution;
     uint16 resunit;
     TIFFGetField(image, TIFFTAG_XRESOLUTION, &xresolution);
-    LOGIF("xres", xresolution);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %f", "xres", xresolution);
     jfieldID gOptions_outXResolutionFieldID = env->GetFieldID(jBitmapOptionsClass, "outXResolution", "F");
     env->SetFloatField(optionsObject, gOptions_outXResolutionFieldID, xresolution);
     TIFFGetField(image, TIFFTAG_YRESOLUTION, &yresolution);
-    LOGIF("yres", yresolution);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %f", "yres", yresolution);
     jfieldID gOptions_outYResolutionFieldID = env->GetFieldID(jBitmapOptionsClass, "outYResolution", "F");
     env->SetFloatField(optionsObject, gOptions_outYResolutionFieldID, yresolution);
     TIFFGetField(image, TIFFTAG_RESOLUTIONUNIT, &resunit);
-    LOGII("resunit", resunit);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "resunit", resunit);
     jclass gOptions_ResolutionUnitClass = env->FindClass("org/beyka/tiffbitmapfactory/ResolutionUnit");
     jfieldID gOptions_ResolutionUnitFieldId = nullptr;
     switch (resunit) {
@@ -2875,7 +2877,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     //Get image planar config
     int planarConfig = 0;
     TIFFGetField(image, TIFFTAG_PLANARCONFIG, &planarConfig);
-    LOGII("planar config", planarConfig);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "planar config", planarConfig);
     jclass gOptions_PlanarConfigClass = env->FindClass("org/beyka/tiffbitmapfactory/PlanarConfig");
     jfieldID gOptions_PlanarConfigFieldId = nullptr;
     switch (planarConfig) {
@@ -2895,7 +2897,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
 
     //Getting image compression scheme and createing CompressionScheme enum
     TIFFGetField(image, TIFFTAG_COMPRESSION, &origcompressionscheme);
-    LOGII("compression", origcompressionscheme);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "compression", origcompressionscheme);
 
     jclass gOptions_ImageCompressionClass = env->FindClass("org/beyka/tiffbitmapfactory/CompressionScheme");
     jfieldID gOptions_ImageCompressionFieldId = nullptr;
@@ -2961,7 +2963,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     int bitPerSample = 0;
     tagRead = TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bitPerSample);
     if (tagRead == 1) {
-        LOGII("bit per sample", bitPerSample);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "bit per sample", bitPerSample);
         jfieldID gOptions_outBitPerSampleFieldID = env->GetFieldID(jBitmapOptionsClass, "outBitsPerSample", "I");
         env->SetIntField(optionsObject, gOptions_outBitPerSampleFieldID, bitPerSample);
     }
@@ -2969,7 +2971,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     int samplePerPixel = 0;
     tagRead = TIFFGetField(image, TIFFTAG_SAMPLESPERPIXEL, &samplePerPixel);
     if (tagRead == 1) {
-        LOGII("sample per pixel", samplePerPixel);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "sample per pixel", samplePerPixel);
         jfieldID gOptions_outSamplePerPixelFieldID = env->GetFieldID(jBitmapOptionsClass, "outSamplePerPixel", "I");
         env->SetIntField(optionsObject, gOptions_outSamplePerPixelFieldID, samplePerPixel);
     }
@@ -2978,14 +2980,14 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     int tileWidth = 0;
     tagRead = TIFFGetField(image, TIFFTAG_TILEWIDTH, &tileWidth);
     if (tagRead == 1) {
-        LOGII("tile width", tileWidth);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "tile width", tileWidth);
         jfieldID gOptions_outTileWidthFieldID = env->GetFieldID(jBitmapOptionsClass, "outTileWidth", "I");
         env->SetIntField(optionsObject, gOptions_outTileWidthFieldID, tileWidth);
     }
     int tileHeight = 0;
     tagRead = TIFFGetField(image, TIFFTAG_TILELENGTH, &tileHeight);
     if (tagRead == 1) {
-        LOGII("tile height", tileHeight);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "tile height", tileHeight);
         jfieldID gOptions_outTileHeightFieldID = env->GetFieldID(jBitmapOptionsClass, "outTileHeight", "I");
         env->SetIntField(optionsObject, gOptions_outTileHeightFieldID, tileHeight);
     }
@@ -2994,27 +2996,27 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     int rowPerStrip = 0;
     tagRead = TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &rowPerStrip);
     if (tagRead == 1) {
-        LOGII("row per strip", rowPerStrip);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "row per strip", rowPerStrip);
         jfieldID gOptions_outRowPerStripFieldID = env->GetFieldID(jBitmapOptionsClass, "outRowPerStrip", "I");
         env->SetIntField(optionsObject, gOptions_outRowPerStripFieldID, rowPerStrip);
     }
 
     //strip size
     uint32 stripSize = TIFFStripSize(image);
-    LOGII("strip size", stripSize);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "strip size", stripSize);
     jfieldID gOptions_outStripSizeFieldID = env->GetFieldID(jBitmapOptionsClass, "outStripSize", "I");
     env->SetIntField(optionsObject, gOptions_outStripSizeFieldID, stripSize);
 
     //strip max
     uint32 stripMax = TIFFNumberOfStrips(image);
-    LOGII("number of strips", stripMax);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "number of strips", stripMax);
     jfieldID gOptions_outStripMaxFieldID = env->GetFieldID(jBitmapOptionsClass, "outNumberOfStrips", "I");
     env->SetIntField(optionsObject, gOptions_outStripMaxFieldID, stripMax);
 
     //photometric
     int photometric = 0;
     TIFFGetField(image, TIFFTAG_PHOTOMETRIC, &photometric);
-    LOGII("photometric", photometric);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "photometric", photometric);
     jclass gOptions_PhotometricClass = env->FindClass("org/beyka/tiffbitmapfactory/Photometric");
     jfieldID gOptions_PhotometricFieldId = nullptr;
     switch (photometric) {
@@ -3070,7 +3072,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     //FillOrder
     int fillOrder = 0;
     TIFFGetField(image, TIFFTAG_FILLORDER, &fillOrder);
-    LOGII("fill Order", fillOrder);
+    __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "fill Order", fillOrder);
     jclass gOptions_FillOrderClass = env->FindClass("org/beyka/tiffbitmapfactory/FillOrder");
     jfieldID gOptions_FillOrderFieldId = nullptr;
     switch (fillOrder) {
@@ -3092,7 +3094,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *artist;
     tagRead = TIFFGetField(image, TIFFTAG_ARTIST, &artist);
     if (tagRead == 1) {
-        LOGI(artist);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", artist);
         jstring jauthor = charsToJString(artist);//env->NewStringUTF(artist);
         jfieldID gOptions_outAuthorFieldId = env->GetFieldID(jBitmapOptionsClass, "outAuthor", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outAuthorFieldId, jauthor);
@@ -3104,7 +3106,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *copyright;
     tagRead = TIFFGetField(image, TIFFTAG_COPYRIGHT, &copyright);
     if (tagRead == 1) {
-        LOGI(copyright);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", copyright);
         jstring jcopyright = charsToJString(copyright);//env->NewStringUTF(copyright);
         jfieldID gOptions_outCopyrightFieldId = env->GetFieldID(jBitmapOptionsClass, "outCopyright", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outCopyrightFieldId, jcopyright);
@@ -3116,7 +3118,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *imgDescr;
     tagRead = TIFFGetField(image, TIFFTAG_IMAGEDESCRIPTION, &imgDescr);
     if (tagRead == 1) {
-        LOGI(imgDescr);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", imgDescr);
         jstring jimgDescr = charsToJString(imgDescr);//env->NewStringUTF(imgDescr);
         jfieldID gOptions_outimgDescrFieldId = env->GetFieldID(jBitmapOptionsClass, "outImageDescription", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outimgDescrFieldId, jimgDescr);
@@ -3128,7 +3130,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *software;
     tagRead = TIFFGetField(image, TIFFTAG_SOFTWARE, &software);
     if (tagRead == 1) {
-        LOGI(software);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", software);
         jstring jsoftware = charsToJString(software);//env->NewStringUTF(software);
         jfieldID gOptions_outsoftwareFieldId = env->GetFieldID(jBitmapOptionsClass, "outSoftware", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outsoftwareFieldId, jsoftware);
@@ -3140,7 +3142,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *datetime;
     tagRead = TIFFGetField(image, TIFFTAG_DATETIME, &datetime);
     if (tagRead == 1) {
-        LOGI(datetime);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", datetime);
         jstring jdatetime = charsToJString(datetime);//env->NewStringUTF(datetime);
         jfieldID gOptions_outdatetimeFieldId = env->GetFieldID(jBitmapOptionsClass, "outDatetime", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outdatetimeFieldId, jdatetime);
@@ -3152,7 +3154,7 @@ void NativeDecoder::writeDataToOptions(int directoryNumber) {
     const char *host;
     tagRead = TIFFGetField(image, TIFFTAG_HOSTCOMPUTER, &host);
     if (tagRead == 1) {
-        LOGI(host);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s", host);
         jstring jhost = charsToJString(host);//env->NewStringUTF(host);
         jfieldID gOptions_outhostFieldId = env->GetFieldID(jBitmapOptionsClass, "outHostComputer", "Ljava/lang/String;");
         env->SetObjectField(optionsObject, gOptions_outhostFieldId, jhost);
@@ -3168,7 +3170,7 @@ jstring NativeDecoder::charsToJString(const char *chars) {
     jstring strEncode = env->NewStringUTF("UTF-8");
     jclass cls = env->FindClass("java/lang/String");
     jmethodID ctor = env->GetMethodID(cls, "<init>", "([BLjava/lang/String;)V");
-    jstring object = (jstring) env->NewObject(cls, ctor, array, strEncode);
+    auto object = (jstring) env->NewObject(cls, ctor, array, strEncode);
     return object;
     //return nullptr;
 }
@@ -3196,22 +3198,22 @@ void NativeDecoder::sendProgress(jlong current, jlong total) {
 }
 
 void NativeDecoder::tileErrorHandler(int code, siginfo_t *siginfo, void *sc) {
-    LOGE("tileErrorHandler");
+    __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "tileErrorHandler");
     longjmp(tile_buf, 1);
 }
 
 void NativeDecoder::stripErrorHandler(int code, siginfo_t *siginfo, void *sc) {
-    LOGE("stripErrorHandler");
+    __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "stripErrorHandler");
     longjmp(strip_buf, 1);
 }
 
 void NativeDecoder::imageErrorHandler(int code, siginfo_t *siginfo, void *sc) {
-    LOGE("imageErrorHandler");
+    __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "imageErrorHandler");
     longjmp(image_buf, 1);
 }
 
 void NativeDecoder::generalErrorHandler(int code, siginfo_t *siginfo, void *sc) {
-    LOGE("generalErrorHandler");
+    __android_log_print(ANDROID_LOG_ERROR, "NativeTiffDecoder", "generalErrorHandler");
     longjmp(general_buf, 1);
 }
 

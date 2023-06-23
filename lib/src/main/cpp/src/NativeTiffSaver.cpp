@@ -18,8 +18,6 @@ extern "C" {
     JNIEXPORT jboolean JNICALL Java_org_beyka_tiffbitmapfactory_TiffSaver_save
     (JNIEnv *env, jclass clazz, jstring filePath, jint fileDescriptor, jobject bitmap, jobject options, jboolean append) {
 
-__android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
-
         //Options class
         jclass jSaveOptionsClass = env->FindClass("org/beyka/tiffbitmapfactory/TiffSaver$SaveOptions");
 
@@ -36,9 +34,9 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
         jboolean throwException = env->GetBooleanField(options, throwExceptionFieldID);
 
         // check is bitmap null
-        if (bitmap == NULL) {
+        if (bitmap == nullptr) {
             const char *message = "Bitmap is null\0";
-            LOGE(message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "%s", message);
             if (throwException) {
                 jstring jmessage = env->NewStringUTF(message);
                 throw_decode_file_exception(env, filePath, jmessage);
@@ -55,7 +53,7 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
         jboolean isRecycled = env->CallBooleanMethod(bitmap, isRecycledMethodid);
         if (isRecycled) {
             const char *message = "Bitmap is recycled\0";
-            LOGE(message);
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "%s", message);
             if (throwException) {
                 jstring jmessage = env->NewStringUTF(message);
                 throw_decode_file_exception(env, filePath, jmessage);
@@ -73,12 +71,12 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
 
 
         if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-            LOGE("AndroidBitmap_getInfo() failed ! error=");
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "AndroidBitmap_getInfo() failed ! error=");
             return JNI_FALSE;
         }
 
         if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
-                LOGE("AndroidBitmap_lockPixels() failed ! error=");
+                __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "AndroidBitmap_lockPixels() failed ! error=");
                 return JNI_FALSE;
         }
 
@@ -88,10 +86,10 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
 /*
         //Get array of jint from jintArray
         jint *c_array;
-        c_array = env->GetIntArrayElements(img, NULL);
-        if (c_array == NULL) {
+        c_array = env->GetIntArrayElements(img, nullptr);
+        if (c_array == nullptr) {
             //if array is null - nothing to save
-            LOGE("array is null");
+            __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "array is null");
             return JNI_FALSE;
         }
 */
@@ -140,28 +138,28 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
         //Get author field if exist
         jfieldID gOptions_authorFieldID = env->GetFieldID(jSaveOptionsClass, "author", "Ljava/lang/String;");
         jstring jAuthor = (jstring)env->GetObjectField(options, gOptions_authorFieldID);
-        const char *authorString = NULL;
+        const char *authorString = nullptr;
         if (jAuthor) {
             authorString = env->GetStringUTFChars(jAuthor, 0);
-            LOGIS("Author: ", authorString);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Author: ", authorString);
         }
 
         //Get copyright field if exist
         jfieldID gOptions_copyrightFieldID = env->GetFieldID(jSaveOptionsClass, "copyright", "Ljava/lang/String;");
         jstring jCopyright = (jstring)env->GetObjectField(options, gOptions_copyrightFieldID);
-        const char *copyrightString = NULL;
+        const char *copyrightString = nullptr;
         if (jCopyright) {
             copyrightString = env->GetStringUTFChars(jCopyright, 0);
-            LOGIS("Copyright: ", copyrightString);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Copyright: ", copyrightString);
         }
 
         //Get image description field if exist
         jfieldID gOptions_imgDescrFieldID = env->GetFieldID(jSaveOptionsClass, "imageDescription", "Ljava/lang/String;");
         jstring jImgDescr = (jstring)env->GetObjectField(options, gOptions_imgDescrFieldID);
-        const char *imgDescrString = NULL;
+        const char *imgDescrString = nullptr;
         if (jImgDescr) {
             imgDescrString = env->GetStringUTFChars(jImgDescr, 0);
-            LOGIS("Image Description: ", imgDescrString);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Image Description: ", imgDescrString);
         }
 
         //Get software name and number from buildconfig
@@ -169,38 +167,38 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
                 "org/beyka/tiffbitmapfactory/BuildConfig");
         jfieldID softwareNameFieldID = env->GetStaticFieldID(jBuildConfigClass, "softwarename", "Ljava/lang/String;");
         jstring jsoftwarename = (jstring)env->GetStaticObjectField(jBuildConfigClass, softwareNameFieldID);
-        const char *softwareNameString = NULL;
+        const char *softwareNameString = nullptr;
         if (jsoftwarename) {
             softwareNameString = env->GetStringUTFChars(jsoftwarename, 0);
-            LOGIS("Software Name: ", softwareNameString);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Software Name: ", softwareNameString);
         }
 
         //Get android version
         jclass build_class = env->FindClass("android/os/Build$VERSION");
         jfieldID releaseFieldID = env->GetStaticFieldID(build_class, "RELEASE", "Ljava/lang/String;");
         jstring jrelease = (jstring)env->GetStaticObjectField(build_class, releaseFieldID);
-        const char *releaseString = NULL;
+        const char *releaseString = nullptr;
         if (jrelease) {
             releaseString = env->GetStringUTFChars(jrelease, 0);
-            LOGIS("Release: ", releaseString);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Release: ", releaseString);
         }
         char *fullReleaseName = concat("Android ", releaseString);
-        LOGIS("Full Release: ", fullReleaseName);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Full Release: ", fullReleaseName);
 
 
         uint32 pixelsBufferSize = img_width * img_height;
-        uint32* img = NULL;
+        uint32* img = nullptr;
         int tmpImgArrayCreated = 0;
         switch (info.format) {
             case ANDROID_BITMAP_FORMAT_RGBA_8888:
             {
-                LOGI("ANDROID_BITMAP_FORMAT_RGBA_8888");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s", "ANDROID_BITMAP_FORMAT_RGBA_8888");
                 img = (uint32*)pixels;
                 break;
             }
             case ANDROID_BITMAP_FORMAT_RGBA_4444:
             {
-                LOGI("ANDROID_BITMAP_FORMAT_RGBA_4444");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s", "ANDROID_BITMAP_FORMAT_RGBA_4444");
                 uint16_t* tmp4444 = (uint16_t*)pixels;
                 img = (uint32*) malloc(sizeof(uint32) * pixelsBufferSize);
                 for (int x = 0; x < img_width; x++) {
@@ -219,7 +217,7 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
             }
             case ANDROID_BITMAP_FORMAT_RGB_565:
             {
-                LOGI("ANDROID_BITMAP_FORMAT_RGB_565");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s", "ANDROID_BITMAP_FORMAT_RGB_565");
                 uint16_t* tmp565 = (uint16_t*)pixels;
                 img = (uint32*) malloc(sizeof(uint32) * pixelsBufferSize);
                 for (int x = 0; x < img_width; x++) {
@@ -237,7 +235,7 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
             }
             case ANDROID_BITMAP_FORMAT_A_8:
             {
-                LOGI("ANDROID_BITMAP_FORMAT_A_8");
+                __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s", "ANDROID_BITMAP_FORMAT_A_8");
                 uint8_t* tmp8 = (uint8_t*)pixels;
                 img = (uint32*) malloc(sizeof(uint32) * pixelsBufferSize);
                 for (int x = 0; x < img_width; x++) {
@@ -292,12 +290,12 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
 */
         TIFF *output_image;
 
-        LOGII("Check file descripor", fileDescriptor);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %d", "Check file descripor", fileDescriptor);
 
-        const char *strPath = NULL;
+        const char *strPath = nullptr;
         if (fileDescriptor == -1) {
             strPath = env->GetStringUTFChars(filePath, 0);
-            LOGIS("nativeTiffOpenForSave", strPath);
+            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "nativeTiffOpenForSave", strPath);
             int mode = O_RDWR | O_CREAT | O_TRUNC | 0;
             if (append) {
                 mode = O_RDWR | O_CREAT;
@@ -311,8 +309,8 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
 
         // Open the TIFF file
         if (!append) {
-            if ((output_image = TIFFFdOpen(fileDescriptor, "", "w")) == NULL) {
-                LOGE("Unable to write tif file");
+            if ((output_image = TIFFFdOpen(fileDescriptor, "", "w")) == nullptr) {
+                __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "Unable to write tif file");
                 if (strPath) {
                     throw_cant_open_file_exception(env, filePath);
                 } else {
@@ -321,8 +319,8 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
                 return JNI_FALSE;
             }
         } else {
-            if ((output_image = TIFFFdOpen(fileDescriptor, "", "a")) == NULL) {
-                LOGE("Unable to write tif file");
+            if ((output_image = TIFFFdOpen(fileDescriptor, "", "a")) == nullptr) {
+                __android_log_print(ANDROID_LOG_ERROR, "NativeTiffSaver", "Unable to write tif file");
                 if (strPath) {
                     throw_cant_open_file_exception(env, filePath);
                 } else {
@@ -398,7 +396,7 @@ __android_log_write(ANDROID_LOG_ERROR, "NativeTiffSaver", "Test Error here");
             }
         }
        ret = TIFFWriteDirectory(output_image);
-        LOGII("ret = ", ret);
+        __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %d", "ret = ", ret);
 
         // Close the file
         TIFFClose(output_image);

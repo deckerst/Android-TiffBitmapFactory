@@ -1,5 +1,5 @@
 #!/bin/sh
-export NDK=/home/tibo/ndk/21.1.6352462
+export NDK=/home/tibo/ndk/25.2.9519653
 # Only choose one of these, depending on your development platform
 export HOST_TAG=linux-x86_64
 # export HOST_TAG=darwin-x86_64
@@ -14,7 +14,7 @@ export TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/$HOST_TAG
 export TARGET=x86_64-linux-android # x86_64
 
 # Set this to your minSdkVersion.
-export API=21
+export API=19
 
 # Configure and build.
 export AR=$TOOLCHAIN/bin/$TARGET-ar
