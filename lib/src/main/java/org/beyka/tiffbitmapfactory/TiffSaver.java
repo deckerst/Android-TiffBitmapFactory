@@ -194,7 +194,7 @@ public class TiffSaver {
 
     /**
      * Close detached file descriptor
-     * @param fd
+     * @param fd - file descriptor to close
      */
     public static native void closeFd(int fd);
 
