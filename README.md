@@ -34,6 +34,34 @@ See `build-lib_guide.txt` to build native part of library.
 
 ### Usage
 #### Opening tiff file
+Starting Android-Q we can't open any file from sdcard, just files from scoped storage of application
+If you need open file somewhere in sdcard you should use [Storage Access Framework](https://android-doc.github.io/guide/topics/providers/document-provider.html)
+
+Request document chooser(Android system don't know image/tiff type so using */*):
+```Java
+Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+intent.addCategory(Intent.CATEGORY_OPENABLE);
+intent.setType("*/*");
+startActivityForResult(intent, requestCode);
+```
+Getting answer from chooser:
+```Java
+@Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_CODE) {
+            try {
+                ParcelFileDescriptor parcelFileDescriptor = getContentResolver().openFileDescriptor(data.getData(), "r");
+                Bitmap bmp = TiffBitmapFactory.decodeFileDescriptor(parcelFileDescriptor.getFd());
+            } catch (FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+```
+Same method used also for TiffSaver and TiffConverter classes
+
+For pre Q devices and for scoped storage you can use old api:
 ```Java
 File file = new File("/sdcard/image.tif");
 

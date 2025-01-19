@@ -9,7 +9,7 @@ android {
         minSdk 21
         targetSdk 33
         versionCode 987
-        versionName "0.9.8.7"
+        versionName "0.9.9.0"
 
         externalNativeBuild {
             cmake {

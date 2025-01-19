@@ -4,7 +4,7 @@ project(TiffBitmapFactory)
 
 include_directories("${CMAKE_SOURCE_DIR}/include")
 include_directories("${CMAKE_SOURCE_DIR}/../../../../3rd-party/jpeg-9d/include")
-include_directories("${CMAKE_SOURCE_DIR}/../../../../3rd-party/tiff-4.2.0/include")
+include_directories("${CMAKE_SOURCE_DIR}/../../../../3rd-party/tiff-4.7.0/include")
 
 add_library(imageOps
              SHARED

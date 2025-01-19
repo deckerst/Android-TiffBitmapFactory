@@ -69,7 +69,7 @@ public class TiffBitmapFactory {
      * @throws org.beyka.tiffbitmapfactory.exceptions.NotEnoughMemoryException when for decoding of image system need more memory than {@link Options#inAvailableMemory} or default value
      */
     public static Bitmap decodeFileDescriptor(int fileDescriptor) throws CantOpenFileException, DecodeTiffException, NotEnoughMemoryException {
-        return decodeFileDescriptor(fileDescriptor, null, null);
+        return decodeFileDescriptor(fileDescriptor, new Options(), null);
     }
 
     /**
@@ -108,6 +108,12 @@ public class TiffBitmapFactory {
     }
 
     private static native Bitmap nativeDecodeFD(int fd, Options options, IProgressListener listener);
+
+    /**
+     * Close detached file descriptor
+     * @param fd
+     */
+    public static native void closeFd(int fd);
 
     /**
      * Options class to specify decoding parameterMs
