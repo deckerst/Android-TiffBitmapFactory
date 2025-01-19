@@ -71,9 +71,6 @@ public class TiffSaver {
      * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while saving image
      */
     public static boolean saveBitmap(String destinationPath, Bitmap bmp, SaveOptions options) throws CantOpenFileException {
-//        int pixels[] = new int[bmp.getWidth() * bmp.getHeight()];
-//        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-
         return save(destinationPath, -1, bmp, options, false);
     }
 
@@ -132,9 +129,6 @@ public class TiffSaver {
      * @throws org.beyka.tiffbitmapfactory.exceptions.DecodeTiffException when error occure while saving image
      */
     public static boolean appendBitmap(String destinationPath, Bitmap bmp,SaveOptions options) throws CantOpenFileException {
-//        int pixels[] = new int[bmp.getWidth() * bmp.getHeight()];
-//        bmp.getPixels(pixels, 0, bmp.getWidth(), 0, 0, bmp.getWidth(), bmp.getHeight());
-
         return save(destinationPath, -1, bmp, options, true);
     }
 

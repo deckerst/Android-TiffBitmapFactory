@@ -6,7 +6,7 @@
 - made compatible with JitPack (build results at https://jitpack.io/com/github/deckerst/Android-TiffBitmapFactory/<commit>/build.log)
 - use CMake
 - upgraded Gradle, AGT, target SDK
-- upgraded libtiff to 4.2.0 (with jpeg support)
+- upgraded libtiff to 4.7.0 (with jpeg support), built with NDK 28.0.12916984
 
 # Android-TiffBitmapFactory
 TiffBitmapFactory is an Android library that allows opening and saving images in *.tif format (See [Wikipedia](https://en.wikipedia.org/wiki/Tagged_Image_File_Format)) on Android devices.
