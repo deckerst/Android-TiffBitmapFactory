@@ -25,7 +25,7 @@ JNIEXPORT jobject JNICALL Java_org_beyka_tiffbitmapfactory_TiffBitmapFactory_nat
  * Class:     com_example_beyka_tiffexample_TiffBitmapFactory
  * Method:    nativeCloseFd
  */
-JNIEXPORT jobject JNICALL Java_org_beyka_tiffbitmapfactory_TiffBitmapFactory_nativeCloseFd
+JNIEXPORT jobject JNICALL Java_org_beyka_tiffbitmapfactory_TiffBitmapFactory_closeFd
   (JNIEnv *, jclass, jint);
 
 #ifdef __cplusplus

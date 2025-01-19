@@ -497,7 +497,7 @@ extern "C" {
     }
 
 JNIEXPORT jobject
-JNICALL Java_org_beyka_tiffbitmapfactory_TiffSaver_nativeCloseFd
+JNICALL Java_org_beyka_tiffbitmapfactory_TiffSaver_closeFd
         (JNIEnv *env, jclass clazz, jint fd) {
     close(fd);
 }
