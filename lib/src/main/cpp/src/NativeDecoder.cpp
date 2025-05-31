@@ -3177,17 +3177,8 @@ jstring NativeDecoder::charsToJString(const char *chars) {
 
 jboolean NativeDecoder::checkStop() {
     jmethodID methodID = env->GetStaticMethodID(jThreadClass, "interrupted", "()Z");
-    jboolean interupted = env->CallStaticBooleanMethod(jThreadClass, methodID);
-
-    jboolean stop;
-    if (optionsObject) {
-        jfieldID stopFieldId = env->GetFieldID(jBitmapOptionsClass, "isStoped", "Z");
-        stop = env->GetBooleanField(optionsObject, stopFieldId);
-    } else {
-        stop = JNI_FALSE;
-    }
-
-    return interupted || stop;
+    jboolean interrupted = env->CallStaticBooleanMethod(jThreadClass, methodID);
+    return interrupted;
 }
 
 void NativeDecoder::sendProgress(jlong current, jlong total) {

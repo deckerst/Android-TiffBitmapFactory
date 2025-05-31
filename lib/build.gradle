@@ -1,13 +1,16 @@
-apply plugin: 'com.android.library'
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
 
 android {
-    namespace 'org.beyka.tiffbitmapfactory'
-    compileSdk 33
-    ndkVersion '28.0.12916984'
+    namespace = 'org.beyka.tiffbitmapfactory'
+    compileSdk = 35
+    ndkVersion = '28.0.12916984'
 
     defaultConfig {
-        minSdk 21
-        targetSdk 33
+        minSdk = 21
+        targetSdk = 35
         versionCode 987
         versionName "0.9.9.0"
 
@@ -19,12 +22,12 @@ android {
     }
 
     compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_8
-        targetCompatibility JavaVersion.VERSION_1_8
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
     }
 
     buildFeatures {
-        buildConfig true
+        buildConfig = true
     }
 
     buildTypes {
@@ -46,10 +49,36 @@ android {
     }
 
     lintOptions {
-        abortOnError false
+        abortOnError = false
+    }
+
+    // necessary from AGP8+ to create the `release` component
+    // accessed in `afterEvaluate` for publication via `MavenPublication`
+    publishing {
+        singleVariant("release") {
+            withSourcesJar()
+            withJavadocJar()
+        }
+        multipleVariants {
+            withSourcesJar()
+            withJavadocJar()
+            allVariants()
+        }
     }
 }
 
 dependencies {
     implementation fileTree(dir: "libs", include: ["*.jar"])
+}
+
+project.afterEvaluate {
+    print("Components: " + components*.name)
+
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.findByName('release')
+            }
+        }
+    }
 }
