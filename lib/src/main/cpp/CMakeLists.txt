@@ -19,8 +19,8 @@ target_link_libraries(imageOps PRIVATE ${log-lib})
 find_library(jnigraphics-lib jnigraphics)
 target_link_libraries(imageOps PRIVATE -ljnigraphics)
 
-add_library(ZLIB SHARED IMPORTED)
-set_target_properties(ZLIB PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/../libs/${ANDROID_ABI}/libz.so")
+find_package(ZLIB REQUIRED)
+target_link_libraries(imageOps PUBLIC ${ZLIB_LIBRARIES})
 
 add_library(JPEGLIB SHARED IMPORTED)
 set_target_properties(JPEGLIB PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/../libs/${ANDROID_ABI}/libjpeg.so")
@@ -30,4 +30,3 @@ set_target_properties(TIFFLIB PROPERTIES IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/
 
 target_link_libraries(imageOps PUBLIC JPEGLIB)
 target_link_libraries(imageOps PUBLIC TIFFLIB)
-target_link_libraries(imageOps PUBLIC ZLIB)
