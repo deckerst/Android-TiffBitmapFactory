@@ -162,17 +162,6 @@ extern "C" {
             __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Image Description: ", imgDescrString);
         }
 
-        //Get software name and number from buildconfig
-        jclass jBuildConfigClass = env->FindClass(
-                "org/beyka/tiffbitmapfactory/BuildConfig");
-        jfieldID softwareNameFieldID = env->GetStaticFieldID(jBuildConfigClass, "softwarename", "Ljava/lang/String;");
-        jstring jsoftwarename = (jstring)env->GetStaticObjectField(jBuildConfigClass, softwareNameFieldID);
-        const char *softwareNameString = nullptr;
-        if (jsoftwarename) {
-            softwareNameString = env->GetStringUTFChars(jsoftwarename, 0);
-            __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffSaver", "%s %s", "Software Name: ", softwareNameString);
-        }
-
         //Get android version
         jclass build_class = env->FindClass("android/os/Build$VERSION");
         jfieldID releaseFieldID = env->GetStaticFieldID(build_class, "RELEASE", "Ljava/lang/String;");
@@ -351,7 +340,7 @@ extern "C" {
             TIFFSetField(output_image, TIFFTAG_PHOTOMETRIC, PHOTOMETRIC_RGB);
         }
 
-        //Write additiona tags
+        //Write additional tags
         //CreationDate tag
         char *date = getCreationDate();
         TIFFSetField(output_image, TIFFTAG_DATETIME, date);
@@ -359,10 +348,6 @@ extern "C" {
         //Host system
         TIFFSetField(output_image, TIFFTAG_HOSTCOMPUTER, fullReleaseName);
 
-        //software
-        if (softwareNameString) {
-            TIFFSetField(output_image, TIFFTAG_SOFTWARE, softwareNameString);
-        }
         //image description
         if (imgDescrString) {
             TIFFSetField(output_image, TIFFTAG_IMAGEDESCRIPTION, imgDescrString);
@@ -416,9 +401,6 @@ extern "C" {
             env->ReleaseStringUTFChars(jrelease, releaseString);
         }
         free(fullReleaseName);
-        if (softwareNameString) {
-            env->ReleaseStringUTFChars(jsoftwarename, softwareNameString);
-        }
         if (imgDescrString) {
             env->ReleaseStringUTFChars(jImgDescr, imgDescrString);
         }
@@ -496,7 +478,7 @@ extern "C" {
         return result;
     }
 
-JNIEXPORT jobject
+JNIEXPORT void
 JNICALL Java_org_beyka_tiffbitmapfactory_TiffSaver_closeFd
         (JNIEnv *env, jclass clazz, jint fd) {
     close(fd);

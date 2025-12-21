@@ -347,7 +347,7 @@ public class TiffBitmapFactory {
          *  <li>1 = Pixels with lower column values are stored in the higher-order bits of the byte.</li>
          *  <li>2 = Pixels with lower column values are stored in the lower-order bits of the byte.</li>
          * </ul>
-         * <p>This parameter is link to TIFFTAG_PLANARCONFIG tag</p>
+         * <p>This parameter is link to TIFFTAG_FILLORDER tag</p>
          */
         public FillOrder outFillOrder;
 

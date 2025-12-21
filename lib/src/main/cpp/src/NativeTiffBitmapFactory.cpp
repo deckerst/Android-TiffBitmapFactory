@@ -17,7 +17,7 @@ JNICALL Java_org_beyka_tiffbitmapfactory_TiffBitmapFactory_nativeDecodeFD
     return java_bitmap;
 }
 
-JNIEXPORT jobject
+JNIEXPORT void
 JNICALL Java_org_beyka_tiffbitmapfactory_TiffBitmapFactory_closeFd
         (JNIEnv *env, jclass clazz, jint fd) {
     close(fd);

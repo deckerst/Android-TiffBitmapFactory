@@ -8,11 +8,11 @@
 #include <jni.h>
 #include <android/log.h>
 #include <android/bitmap.h>
-#include <stdlib.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdio>
 #include <tiffio.h>
-#include <signal.h>
-#include <setjmp.h>
+#include <csignal>
+#include <csetjmp>
 #include "NativeExceptions.h"
 
 class NativeDecoder {
@@ -52,7 +52,7 @@ private:
     jobject listenerObject;
     jclass jIProgressListenerClass;
     jclass jBitmapOptionsClass;
-    jclass jThreadClass = NULL;
+    jclass jThreadClass = nullptr;
     jint jFd;
     jstring jPath;
     jboolean throwException;

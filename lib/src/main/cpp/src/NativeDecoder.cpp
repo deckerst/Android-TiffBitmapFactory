@@ -2516,7 +2516,6 @@ int NativeDecoder::getDecodeMethod() {
         TIFFGetField(image, TIFFTAG_ROWSPERSTRIP, &rowPerStrip);
         uint32 stripSize = TIFFStripSize(image);
         uint32 stripMax = TIFFNumberOfStrips(image);
-        int estimate = origwidth * 3;
         __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "RPS", rowPerStrip);
         __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripSize", stripSize);
         __android_log_print(ANDROID_LOG_DEBUG, "NativeTiffDecoder", "%s %d", "stripMax", stripMax);
