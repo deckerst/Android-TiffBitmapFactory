@@ -538,17 +538,8 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
                     rows_to_write = rowPerStrip;
                 }
 
-                if (origorientation <= 4) {
-                    for (int line = 0; line < rows_to_write / 2; line++) {
-                        unsigned int *top_line, *bottom_line;
-
-                        top_line = rasterForBottomLine + origwidth * line;
-                        bottom_line = rasterForBottomLine + origwidth * (rows_to_write - line - 1);
-
-                        _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                    }
+                if (needStripVerticalFlip()) {
+                    flipPixelsVerticalWithBuffer(origwidth, rows_to_write, rasterForBottomLine, work_line_buf);
                 }
             } else {
                 isSecondRasterExist = 0;
@@ -564,17 +555,8 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
                 rows_to_write = rowPerStrip;
             }
 
-            if (origorientation <= 4) {
-                for (int line = 0; line < rows_to_write / 2; line++) {
-                    unsigned int *top_line, *bottom_line;
-
-                    top_line = raster + origwidth * line;
-                    bottom_line = raster + origwidth * (rows_to_write - line - 1);
-
-                    _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                    _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                    _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                }
+            if (needStripVerticalFlip()) {
+                flipPixelsVerticalWithBuffer(origwidth, rows_to_write, raster, work_line_buf);
             }
 
             //if next strip is exist - read it and invert lines
@@ -589,17 +571,8 @@ jint *NativeDecoder::getSampledRasterFromStrip(int inSampleSize, int *bitmapWidt
                 } else {
                     rows_to_write = rowPerStrip;
                 }
-                if (origorientation <= 4) {
-                    for (int line = 0; line < rows_to_write / 2; line++) {
-                        unsigned int *top_line, *bottom_line;
-
-                        top_line = rasterForBottomLine + origwidth * line;
-                        bottom_line = rasterForBottomLine + origwidth * (rows_to_write - line - 1);
-
-                        _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                    }
+                if (needStripVerticalFlip()) {
+                    flipPixelsVerticalWithBuffer(origwidth, rows_to_write, rasterForBottomLine, work_line_buf);
                 }
             }
         }
@@ -864,17 +837,8 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                     rows_to_write = rowPerStrip;
                 }
 
-                if (origorientation <= 4) {
-                    for (int line = 0; line < rows_to_write / 2; line++) {
-                        unsigned int *top_line, *bottom_line;
-
-                        top_line = rasterForBottomLine + origwidth * line;
-                        bottom_line = rasterForBottomLine + origwidth * (rows_to_write - line - 1);
-
-                        _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                    }
+                if (needStripVerticalFlip()) {
+                    flipPixelsVerticalWithBuffer(origwidth, rows_to_write, rasterForBottomLine, work_line_buf);
                 }
             } else {
                 isSecondRasterExist = 0;
@@ -890,17 +854,8 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                 rows_to_write = rowPerStrip;
             }
 
-            if (origorientation <= 4) {
-                for (int line = 0; line < rows_to_write / 2; line++) {
-                    unsigned int *top_line, *bottom_line;
-
-                    top_line = raster + origwidth * line;
-                    bottom_line = raster + origwidth * (rows_to_write - line - 1);
-
-                    _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                    _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                    _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                }
+            if (needStripVerticalFlip()) {
+                flipPixelsVerticalWithBuffer(origwidth, rows_to_write, raster, work_line_buf);
             }
 
             //if next strip is exist - read it and invert lines
@@ -915,17 +870,8 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
                 } else {
                     rows_to_write = rowPerStrip;
                 }
-                if (origorientation <= 4) {
-                    for (int line = 0; line < rows_to_write / 2; line++) {
-                        unsigned int *top_line, *bottom_line;
-
-                        top_line = rasterForBottomLine + origwidth * line;
-                        bottom_line = rasterForBottomLine + origwidth * (rows_to_write - line - 1);
-
-                        _TIFFmemcpy(work_line_buf, top_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(top_line, bottom_line, sizeof(unsigned int) * origwidth);
-                        _TIFFmemcpy(bottom_line, work_line_buf, sizeof(unsigned int) * origwidth);
-                    }
+                if (needStripVerticalFlip()) {
+                    flipPixelsVerticalWithBuffer(origwidth, rows_to_write, rasterForBottomLine, work_line_buf);
                 }
             }
         }
@@ -1094,6 +1040,10 @@ jint *NativeDecoder::getSampledRasterFromStripWithBounds(int inSampleSize, int *
     *bitmapHeight = boundHeight / inSampleSize;
 
     return pixels;
+}
+
+bool NativeDecoder::needStripVerticalFlip() {
+    return origorientation <= 2;
 }
 
 //Apply filter to pixel
@@ -2563,6 +2513,19 @@ void NativeDecoder::flipPixelsVertical(uint32 width, uint32 height, jint *raster
         _TIFFmemcpy(bottom_line, bufferLine, sizeof(jint) * width);
     }
     free(bufferLine);
+}
+
+void NativeDecoder::flipPixelsVerticalWithBuffer(uint32 width, uint32 height, uint32 *raster, uint32 *bufferLine) {
+    for (int line = 0; line < height / 2; line++) {
+        uint32 *top_line, *bottom_line;
+
+        top_line = raster + width * line;
+        bottom_line = raster + width * (height - line - 1);
+
+        _TIFFmemcpy(bufferLine, top_line, sizeof(jint) * width);
+        _TIFFmemcpy(top_line, bottom_line, sizeof(jint) * width);
+        _TIFFmemcpy(bottom_line, bufferLine, sizeof(jint) * width);
+    }
 }
 
 void NativeDecoder::flipPixelsHorizontal(uint32 width, uint32 height, jint *raster) {

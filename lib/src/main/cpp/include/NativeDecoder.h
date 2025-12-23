@@ -89,6 +89,8 @@ private:
 
     jint *getSampledRasterFromStripWithBounds(int, int *, int *);
 
+    bool needStripVerticalFlip();
+
     jint applyFilterForStrip(int x, int y, const uint32 *raster, const unsigned int *matrixTopLine, const unsigned int *matrixBottomLine, int rowPerStrip, int globalLineCounter, int isSecondRasterExist) const;
 
     jint *getSampledRasterFromTile(int, int *, int *);
@@ -104,6 +106,8 @@ private:
     void rotateTileLinesHorizontal(uint32, uint32, uint32 *, uint32 *);
 
     void flipPixelsVertical(uint32, uint32, jint *);
+
+    void flipPixelsVerticalWithBuffer(uint32, uint32, uint32 *, uint32 *);
 
     void flipPixelsHorizontal(uint32, uint32, jint *);
 
